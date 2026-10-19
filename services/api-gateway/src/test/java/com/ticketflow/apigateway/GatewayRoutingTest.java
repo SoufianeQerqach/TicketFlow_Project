@@ -84,6 +84,15 @@ class GatewayRoutingTest {
     }
 
     @Test
+    void forwardsCustomerRequestsViaDiscoveryLocator() throws Exception {
+        HttpResponse<String> response = get("/customer-service/api/customers/1");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).contains("Sara");
+        assertThat(lastBackendPath.get()).isEqualTo("/api/customers/1");
+    }
+
+    @Test
     void addsTheGatewayResponseHeader() throws Exception {
         HttpResponse<String> response = get("/api/customers");
 

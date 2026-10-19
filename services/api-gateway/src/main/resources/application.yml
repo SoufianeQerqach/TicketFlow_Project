@@ -8,6 +8,11 @@ spring:
     gateway:
       server:
         webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+
           # A ROUTE is the basic building block of the gateway. It answers 3 questions:
           #   1. WHERE to send the request  -> id + uri
           #   2. WHEN does this route apply -> predicates
