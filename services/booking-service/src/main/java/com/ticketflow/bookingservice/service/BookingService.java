@@ -30,15 +30,19 @@ public class BookingService {
     private final SeatInventoryInitializer initializer;
     private final TransactionTemplate tx;
     private final Clock clock;
+    private final com.ticketflow.bookingservice.events.BookingEventProducer eventProducer;
 
     public BookingService(EventClient events, BookingRepo bookings, SeatInventoryRepo inventory,
-                          SeatInventoryInitializer initializer, TransactionTemplate tx, Clock clock) {
+                          SeatInventoryInitializer initializer, TransactionTemplate tx, Clock clock,
+                          @org.springframework.beans.factory.annotation.Autowired(required = false)
+                          com.ticketflow.bookingservice.events.BookingEventProducer eventProducer) {
         this.events = events;
         this.bookings = bookings;
         this.inventory = inventory;
         this.initializer = initializer;
         this.tx = tx;
         this.clock = clock;
+        this.eventProducer = eventProducer;
     }
 
     /** Validates an event by calling event-service via OpenFeign. */
@@ -61,13 +65,18 @@ public class BookingService {
         } catch (DataAccessException concurrentCreation) {
             // another request created the counter first: that is fine, it exists now
         }
-        return tx.execute(status -> {
+        Booking saved = tx.execute(status -> {
             if (inventory.reserve(eventId, quantity, event.capacity()) == 0) {
                 throw new BookingRuleException("Not enough seats left for this event");
             }
             return bookings.save(new Booking(eventId, event.title(), customerId,
                     quantity, event.price(), Instant.now(clock)));
         });
+
+        if (eventProducer != null && saved != null) {
+            eventProducer.sendBookingConfirmed(saved);
+        }
+        return saved;
     }
 
     /** Cancels a booking and gives its seats back. */
