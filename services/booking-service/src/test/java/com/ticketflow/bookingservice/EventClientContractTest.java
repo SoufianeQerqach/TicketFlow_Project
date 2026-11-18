@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @SpringBootTest(properties = {
         "eureka.client.enabled=false",
+        "spring.cloud.openfeign.circuitbreaker.enabled=false",
         "spring.cloud.openfeign.client.config.default.read-timeout=500",
         "spring.cloud.openfeign.client.config.event-service.read-timeout=500"})
 @AutoConfigureMockMvc
